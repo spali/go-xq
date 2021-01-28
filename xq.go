@@ -95,6 +95,9 @@ func parseArguments(_file string, _f string, _xpath string, _x string, s os.File
 			err = ErrMissingFile
 			return
 		}
+		if file == "-" {
+			stdin = true
+		}
 	}
 	if _x != "" {
 		xpath = _x

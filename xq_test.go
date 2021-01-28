@@ -64,6 +64,9 @@ func Test_parseArguments(t *testing.T) {
 		wantStdin bool
 		wantErr   error
 	}{
+		{"xpath and explicit stdin argument",
+			args{xpath: "xxx", f: "-", input: "./note.xml"},
+			"", "xxx", false, nil},
 		{"no arguments and no input",
 			args{},
 			"", "", false, ErrMissingFile},
