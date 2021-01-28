@@ -84,7 +84,7 @@ func printUsage() {
 
 func parseArguments(_file string, _f string, _xpath string, _x string, s os.File) (file string, xpath string, stdin bool, err error) {
 	stat, _ := s.Stat()
-	if stdin = stat.Size() > 0; !stdin {
+	if stdin = (stat.Mode() & os.ModeCharDevice) == 0; !stdin {
 		if _f != "" {
 			file = _f
 		}
