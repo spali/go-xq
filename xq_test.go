@@ -153,6 +153,7 @@ func Test_query(t *testing.T) {
 		{"test root element specifically queried by name", args{newStringReader("<abc></abc>"), "/abc"}, "<abc></abc>", nil},
 		{"test root element specifically queried", args{newStringReader("<abc></abc>"), "/"}, "<?xml?><abc></abc>", nil},
 		{"test root element queried", args{newStringReader("<abc></abc>"), "/*"}, "<abc></abc>", nil},
+		{"test attribute node", args{newStringReader("<abc id=\"test\"></abc>"), "/abc/@id"}, "test", nil},
 	}
 
 	for _, tt := range tests {

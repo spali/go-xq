@@ -123,9 +123,14 @@ func query(reader io.ReadCloser, xpath string) error {
 		return fmt.Errorf("%w: %s", ErrXMLQuery, err)
 	}
 	for _, elem := range list {
-		// prevent output of pseudo tags if root element was selected
-		isRoot := elem.Parent != nil
-		fmt.Printf("%s\n", elem.OutputXML(isRoot))
+		if elem.Type == xmlquery.AttributeNode {
+			// do not nest attribute node in a tag
+			fmt.Printf("%s\n", elem.InnerText())
+		} else {
+			// prevent output of pseudo tags if root element was selected
+			isRoot := elem.Parent != nil
+			fmt.Printf("%s\n", elem.OutputXML(isRoot))
+		}
 	}
 	return nil
 }
