@@ -149,7 +149,7 @@ func Test_query(t *testing.T) {
 		{"invalid xml syntax (unexpected EOF)", args{newStringReader("<"), "/"}, "", ErrXMLParse},
 		{"invalid xml syntax (expected element name after)", args{newStringReader("<>"), "/"}, "", ErrXMLParse},
 		{"empty expression", args{newStringReader(""), ""}, "", ErrXMLQuery},
-		{"invalid expression", args{newStringReader("<abc></abc>"), "-/"}, "", ErrXMLQuery},
+		{"invalid expression", args{newStringReader("<abc></abc>"), "-*/"}, "", ErrXMLQuery},
 		{"test root element specifically queried by name", args{newStringReader("<abc></abc>"), "/abc"}, "<abc></abc>", nil},
 		{"test root element specifically queried", args{newStringReader("<abc></abc>"), "/"}, "<?xml?><abc></abc>", nil},
 		{"test root element queried", args{newStringReader("<abc></abc>"), "/*"}, "<abc></abc>", nil},
