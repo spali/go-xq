@@ -40,6 +40,9 @@ func getReader(file string) (io.Reader, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%w: %s", ErrInvalidFile, err)
 		}
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("%w: %s", ErrInvalidFile, resp.Status)
+		}
 		return resp.Body, nil
 	} else if err == nil && u.Scheme == "file" {
 		file = filepath.FromSlash(fmt.Sprintf("%s%s", u.Host, u.Path))
