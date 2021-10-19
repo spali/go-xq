@@ -51,7 +51,7 @@ jobs:
       - name: Build Binary
         run: go build .
       - name: Run Test
-        run: go test -race -coverprofile coverage.out -covermode atomic -v ./...
+        run: go test -race -coverprofile coverage.out -covermode atomic -tags test -v ./...
       - name: Upload Coverage
         uses: codecov/codecov-action@v2
         with:

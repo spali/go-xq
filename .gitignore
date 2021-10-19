@@ -23,6 +23,7 @@ coverage.txt
 coverage.html
 
 # xq binaries
+__debug_bin
 bin
 xq*
 !xq*.go

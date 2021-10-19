@@ -20,6 +20,7 @@
     "coveredBorderColor": "",
     "uncoveredBorderColor": ""
   },
+  "go.testTags": "test",
   "go.coverOnSingleTest": true,
   "go.coverOnTestPackage": true
 }

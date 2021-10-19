@@ -3,45 +3,88 @@ package main
 import (
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/rhysd/go-fakeio"
 )
 
-func Test_getDoc(t *testing.T) {
+func Test_getReader(t *testing.T) {
 	type args struct {
 		file string
 	}
-	path, _ := os.Getwd()
+	wd, _ := os.Getwd()
+	path := filepath.ToSlash(wd)
 	handler := http.FileServer(http.Dir("./"))
 	server := httptest.NewServer(handler)
 	defer server.Close()
+
+	testFileContent := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+		"<note>\n" +
+		"  <to>Tove</to>\n" +
+		"  <from>Jani</from>\n" +
+		"  <heading>Reminder</heading>\n" +
+		"  <body>Don't forget me this weekend!</body>\n" +
+		"</note>"
+
 	tests := []struct {
-		name    string
-		args    args
-		wantErr error
+		name      string
+		args      args
+		wantInput string
+		wantErr   error
 	}{
-		{"Test without argument", args{""}, ErrNoInput},
-		{"Test valid http url", args{server.URL}, nil},
-		{"Test valid relative file url", args{"file://./note.xml"}, nil},
-		{"Test valid relative non existing file url", args{"file://./doesnotexist.xml"}, os.ErrNotExist},
-		{"Test valid absolute file url", args{"file://" + path + "/note.xml"}, nil},
-		{"Test non existing absolute file url", args{"file://doesnotexist.xml"}, os.ErrNotExist},
-		{"Test invalid ftp url", args{"ftp://"}, ErrUnsupportedURL},
-		{"Test valid relative file path", args{"./note.xml"}, nil},
-		{"Test valid absolute file path", args{path + "/note.xml"}, nil},
+		// valid file paths
+		{"valid relative file path", args{"./note.xml"}, testFileContent, nil},
+		{"valid absolute file path", args{path + "/note.xml"}, testFileContent, nil},
+		{"valid relative file url", args{"file://./note.xml"}, testFileContent, nil},
+		{"valid absolute file url", args{"file://" + path + "/note.xml"}, testFileContent, nil},
+		{"valid http url", args{server.URL + "/note.xml"}, testFileContent, nil},
+		// non existing paths
+		{"non existing http url", args{"http://0.0.0.0"}, "", ErrInvalidFile},
+		{"non existing file url", args{"file://./doesnotexist.xml"}, "", ErrInvalidFile},
+		{"non existing absolute file url", args{"file://doesnotexist.xml"}, "", ErrInvalidFile},
+		{"invalid ftp url", args{"ftp://"}, "", ErrInvalidFile},
+		{"without argument", args{""}, "", ErrNoInput},
+		// stdin
+		{"without stdin argument", args{"-"}, testFileContent, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getReader(tt.args.file)
+
+			if tt.args.file == "-" {
+				// fake stdin from file
+				if f, err := os.Open("./note.xml"); err != nil {
+					panic(err)
+				} else {
+					if b, err := io.ReadAll(f); err != nil {
+						panic(err)
+					} else {
+						fake := fakeio.StdinBytes(b).CloseStdin()
+						defer fake.Restore()
+					}
+				}
+			}
+
+			var gotInput string
+			reader, err := getReader(tt.args.file)
+
+			if err == nil {
+				bytes, err := io.ReadAll(reader)
+				if err != nil {
+					panic(err)
+				}
+				gotInput = string(bytes)
+			}
 			if (err != nil || tt.wantErr != nil) && !errors.Is(err, tt.wantErr) {
 				t.Errorf("getReader() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-			if got == nil && tt.wantErr == nil {
-				t.Errorf("getReader() = %v, want %v", got, "!= <nil>")
+			if gotInput != tt.wantInput {
+				t.Errorf("getReader() gotInput = %v, want %v", gotInput, tt.wantInput)
 			}
 		})
 	}
@@ -61,83 +104,55 @@ func Test_parseArguments(t *testing.T) {
 		args
 		wantFile  string
 		wantXpath string
-		wantStdin bool
 		wantErr   error
 	}{
 		{"xpath and explicit stdin argument",
 			args{xpath: "xxx", f: "-", input: "./note.xml"},
-			"", "xxx", false, nil},
+			"-", "xxx", nil},
 		{"no arguments and no input",
 			args{},
-			"", "", false, ErrMissingFile},
+			"-", "", ErrMissingXpath},
 		{"only x argument",
 			args{x: "abc"},
-			"", "", false, ErrMissingFile},
+			"-", "abc", nil},
 		{"only xpath argument",
 			args{xpath: "abc"},
-			"", "", false, ErrMissingFile},
+			"-", "abc", nil},
 		{"no arguments but stdin input",
 			args{input: "./note.xml"},
-			"", "", false, ErrMissingXpath},
+			"-", "", ErrMissingXpath},
 		{"only f argument",
 			args{f: "./note.xml"},
-			"./note.xml", "", false, ErrMissingXpath},
+			"./note.xml", "", ErrMissingXpath},
 		{"only file argument",
 			args{file: "./note.xml"},
-			"./note.xml", "", false, ErrMissingXpath},
+			"./note.xml", "", ErrMissingXpath},
 		{"f,x argument",
 			args{x: "xxx", f: "./note.xml"},
-			"./note.xml", "xxx", false, nil},
+			"./note.xml", "xxx", nil},
 		{"f,xpath argument",
 			args{xpath: "xxx", f: "./note.xml"},
-			"./note.xml", "xxx", false, nil},
+			"./note.xml", "xxx", nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var stdin *os.File
-			if tt.args.input == "" {
-				stdin = os.NewFile(0, "stdin")
-			} else {
-				stdin, _ = os.Open(tt.args.input)
-			}
-			gotFile, gotXpath, gotStdin, err := parseArguments(tt.args.file, tt.args.f, tt.args.xpath, tt.args.x, *stdin)
+			gotFile, gotXpath, err := parseArguments(tt.args.file, tt.args.f, tt.args.xpath, tt.args.x)
 			if gotFile != tt.wantFile {
 				t.Errorf("parseArguments() gotFile = %v, want %v", gotFile, tt.wantFile)
 			}
 			if gotXpath != tt.wantXpath {
 				t.Errorf("parseArguments() gotXpath = %v, want %v", gotXpath, tt.wantXpath)
 			}
-			if gotXpath != tt.wantXpath {
-				t.Errorf("parseArguments() gotStdin = %v, want %v", gotStdin, tt.wantStdin)
-			}
 			if (err != nil || tt.wantErr != nil) && !errors.Is(err, tt.wantErr) {
 				t.Errorf("parseArguments() error = %v, wantErr %v", err, tt.wantErr)
-				return
 			}
 		})
 	}
 }
 
-type stringReader struct {
-	io.ReadCloser
-	sr *strings.Reader
-}
-
-func (s *stringReader) Close() error {
-	return nil
-}
-
-func (s *stringReader) Read(b []byte) (int, error) {
-	return s.sr.Read(b)
-}
-
-func newStringReader(s string) *stringReader {
-	return &stringReader{sr: strings.NewReader(s)}
-}
-
 func Test_query(t *testing.T) {
 	type args struct {
-		reader io.ReadCloser
+		reader io.Reader
 		xpath  string
 	}
 	tests := []struct {
@@ -146,30 +161,30 @@ func Test_query(t *testing.T) {
 		wantOutput string
 		wantErr    error
 	}{
-		{"invalid xml syntax (unexpected EOF)", args{newStringReader("<"), "/"}, "", ErrXMLParse},
-		{"invalid xml syntax (expected element name after)", args{newStringReader("<>"), "/"}, "", ErrXMLParse},
-		{"empty expression", args{newStringReader(""), ""}, "", ErrXMLQuery},
-		{"invalid expression", args{newStringReader("<abc></abc>"), "-*/"}, "", ErrXMLQuery},
-		{"test root element specifically queried by name", args{newStringReader("<abc></abc>"), "/abc"}, "<abc></abc>", nil},
-		{"test root element specifically queried", args{newStringReader("<abc></abc>"), "/"}, "<?xml?><abc></abc>", nil},
-		{"test root element queried", args{newStringReader("<abc></abc>"), "/*"}, "<abc></abc>", nil},
-		{"test attribute node", args{newStringReader("<abc id=\"test\"></abc>"), "/abc/@id"}, "test", nil},
+		{"invalid xml syntax (unexpected EOF)", args{strings.NewReader("<"), "/"}, "", ErrXMLParse},
+		{"invalid xml syntax (expected element name after)", args{strings.NewReader("<>"), "/"}, "", ErrXMLParse},
+		{"empty expression", args{strings.NewReader(""), ""}, "", ErrXMLQuery},
+		{"invalid expression", args{strings.NewReader("<abc></abc>"), "-*/"}, "", ErrXMLQuery},
+		{"test root element specifically queried by name", args{strings.NewReader("<abc></abc>"), "/abc"}, "<abc></abc>\n", nil},
+		{"test root element specifically queried", args{strings.NewReader("<abc></abc>"), "/"}, "<?xml?><abc></abc>\n", nil},
+		{"test root element queried", args{strings.NewReader("<abc></abc>"), "/*"}, "<abc></abc>\n", nil},
+		{"test attribute node", args{strings.NewReader("<abc id=\"test\"></abc>"), "/abc/@id"}, "test\n", nil},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			fake := fakeio.Stdout()
+			defer fake.Restore()
 
-			rescueStdout := os.Stdout
-			r, w, _ := os.Pipe()
-			os.Stdout = w
-
+			var gotOutput string
 			err := query(tt.args.reader, tt.args.xpath)
+			if err == nil {
+				gotOutput, err = fake.String()
+				if err != nil {
+					panic(err)
+				}
+			}
 
-			w.Close()
-			out, _ := ioutil.ReadAll(r)
-			os.Stdout = rescueStdout
-
-			gotOutput := strings.TrimSuffix(string(out), "\n")
 			if gotOutput != tt.wantOutput {
 				t.Errorf("query() gotOutput = %v, want %v", gotOutput, tt.wantOutput)
 			}
@@ -180,4 +195,45 @@ func Test_query(t *testing.T) {
 		})
 	}
 
+}
+
+func Test_xq(t *testing.T) {
+	type args struct {
+		file  string
+		xpath string
+		stdin string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantOutput string
+		wantErr    error
+	}{
+		{"valid file path", args{"./note.xml", "/note/to/text()", ""}, "Tove\n", nil},
+		{"invalid file path", args{"./doesnotexist.xml", "/note/to/text()", ""}, "", ErrInvalidFile},
+		{"invalid query", args{"./note.xml", "", ""}, "", ErrXMLQuery},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fake := fakeio.Stdout()
+			defer fake.Restore()
+
+			var gotOutput string
+			err := xq(tt.args.file, tt.args.xpath)
+			if err == nil {
+				gotOutput, err = fake.String()
+				if err != nil {
+					panic(err)
+				}
+			}
+
+			if gotOutput != tt.wantOutput {
+				t.Errorf("xq() gotOutput = %v, want %v", gotOutput, tt.wantOutput)
+			}
+			if (err != nil || tt.wantErr != nil) && !errors.Is(err, tt.wantErr) {
+				t.Errorf("query() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
 }
