@@ -44,7 +44,8 @@ func Test_getReader(t *testing.T) {
 		{"valid absolute file url", args{"file://" + path + "/note.xml"}, testFileContent, nil},
 		{"valid http url", args{server.URL + "/note.xml"}, testFileContent, nil},
 		// non existing paths
-		{"non existing http url", args{"http://0.0.0.0"}, "", ErrInvalidFile},
+		{"non existing http url", args{server.URL + "/doesnotexist.xml"}, "", ErrInvalidFile},
+		{"invalid http url", args{"http://127.0.0.1:99999"}, "", ErrInvalidFile},
 		{"non existing file url", args{"file://./doesnotexist.xml"}, "", ErrInvalidFile},
 		{"non existing absolute file url", args{"file://doesnotexist.xml"}, "", ErrInvalidFile},
 		{"invalid ftp url", args{"ftp://"}, "", ErrInvalidFile},
