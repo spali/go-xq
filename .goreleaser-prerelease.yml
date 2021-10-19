@@ -47,3 +47,5 @@ changelog:
       - '^docs:'
       - '^test:'
       - '^dev:'
+release:
+  prerelease: true

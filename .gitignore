@@ -18,7 +18,9 @@
 .env
 
 # test ouput
+coverage.out
 coverage.txt
+coverage.html
 
 # xq binaries
 bin

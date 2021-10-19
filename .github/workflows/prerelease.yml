@@ -1,13 +1,13 @@
-name: Release
+name: Pre-Release
 
 on:
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-**"
 
 jobs:
   build:
-    name: Release
+    name: Pre-Release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,6 +24,6 @@ jobs:
         uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
-          args: release --rm-dist --config .goreleaser.yml
+          args: release --rm-dist --config .goreleaser-prerelease.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
