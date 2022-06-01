@@ -14,12 +14,12 @@ import (
 
 // set during built time
 var (
-	name      string = "xq"
-	source    string = "unknown"
-	version   string = "unknown"
-	commit    string = "unknown"
-	platform  string = "unknown"
-	buildTime string = "unknown"
+	name      = "xq"
+	source    = "unknown"
+	version   = "unknown"
+	commit    = "unknown"
+	platform  = "unknown"
+	buildTime = "unknown"
 )
 
 var (
