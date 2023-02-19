@@ -35,7 +35,7 @@ func getReader(file string) (io.Reader, error) {
 		return os.Stdin, nil
 	}
 	if u, err := url.ParseRequestURI(file); err == nil && (u.Scheme == "http" || u.Scheme == "https") {
-		// nolint:gosec,bodyclose,noctx
+		//nolint:gosec,bodyclose,noctx
 		resp, err := http.Get(file)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %s", ErrInvalidFile, err)
