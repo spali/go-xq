@@ -167,7 +167,7 @@ func Test_query(t *testing.T) {
 		{"empty expression", args{strings.NewReader(""), ""}, "", ErrXMLQuery},
 		{"invalid expression", args{strings.NewReader("<abc></abc>"), "-*/"}, "", ErrXMLQuery},
 		{"test root element specifically queried by name", args{strings.NewReader("<abc></abc>"), "/abc"}, "<abc></abc>\n", nil},
-		{"test root element specifically queried", args{strings.NewReader("<abc></abc>"), "/"}, "<?xml?><abc></abc>\n", nil},
+		{"test root element specifically queried", args{strings.NewReader("<abc></abc>"), "/"}, "<?xml version=\"1.0\"?><abc></abc>\n", nil},
 		{"test root element queried", args{strings.NewReader("<abc></abc>"), "/*"}, "<abc></abc>\n", nil},
 		{"test attribute node", args{strings.NewReader("<abc id=\"test\"></abc>"), "/abc/@id"}, "test\n", nil},
 	}
