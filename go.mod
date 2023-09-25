@@ -3,7 +3,7 @@ module xq
 go 1.20
 
 require (
-	github.com/antchfx/xmlquery v1.3.17
+	github.com/antchfx/xmlquery v1.3.18
 	github.com/rhysd/go-fakeio v1.0.0
 )
 
