@@ -58,16 +58,16 @@ func Test_getReader(t *testing.T) {
 
 			if tt.args.file == "-" {
 				// fake stdin from file
-				if f, err := os.Open("./note.xml"); err != nil {
+				f, err := os.Open("./note.xml")
+				if err != nil {
 					panic(err)
-				} else {
-					if b, err := io.ReadAll(f); err != nil {
-						panic(err)
-					} else {
-						fake := fakeio.StdinBytes(b).CloseStdin()
-						defer fake.Restore()
-					}
 				}
+				b, err := io.ReadAll(f)
+				if err != nil {
+					panic(err)
+				}
+				fake := fakeio.StdinBytes(b).CloseStdin()
+				defer fake.Restore()
 			}
 
 			var gotInput string
