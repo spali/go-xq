@@ -1,6 +1,3 @@
-run:
-  go: "1.22"
-
 linters-settings:
   lll:
     line-length: 140

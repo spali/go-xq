@@ -15,13 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
-      - uses: actions/setup-go@v5
-        with:
-          go-version: 1.22
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: true
       - name: Lint
         uses: golangci/golangci-lint-action@v4
         with:
@@ -36,16 +37,16 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
-        go: [1.22]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: "Setup Go ${{ matrix.go }}"
+      - name: "Setup Go"
         uses: actions/setup-go@v5
         with:
-          go-version: "${{ matrix.go }}"
+          go-version-file: go.mod
+          check-latest: true
       - name: "Setup Go modules cache"
         uses: "actions/cache@v4"
         with:
