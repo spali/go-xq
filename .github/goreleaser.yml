@@ -51,4 +51,4 @@ changelog:
       - '^dev:'
       - '^chore(\(.*\))?:'
 release:
-  prerelease: true
+  prerelease: auto
