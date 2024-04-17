@@ -1,6 +1,6 @@
 module xq
 
-go 1.22.0
+go 1.22.2
 
 require (
 	github.com/antchfx/xmlquery v1.4.0
