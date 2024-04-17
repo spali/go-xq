@@ -48,4 +48,4 @@ changelog:
       - '^doc:'
       - '^docs:'
       - '^test:'
-      - '^dev:'
+      - '^chore(\(.*\))?:'
