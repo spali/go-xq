@@ -1,4 +1,4 @@
-module xq
+module github.com/spali/go-xq
 
 go 1.22.0
 
