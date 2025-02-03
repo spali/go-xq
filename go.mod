@@ -3,7 +3,7 @@ module github.com/spali/go-xq
 go 1.22.0
 
 require (
-	github.com/antchfx/xmlquery v1.4.3
+	github.com/antchfx/xmlquery v1.4.4
 	github.com/rhysd/go-fakeio v1.0.0
 )
 
