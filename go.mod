@@ -1,6 +1,6 @@
 module github.com/spali/go-xq
 
-go 1.22.0
+go 1.24.0
 
 require (
 	github.com/antchfx/xmlquery v1.4.4

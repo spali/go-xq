@@ -26,7 +26,7 @@ linters:
     - dupl
     - errcheck
     - exhaustive
-    - exportloopref
+    - copyloopvar
     - funlen
     - gochecknoinits
     - goconst
@@ -34,7 +34,7 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    - gomnd
+    - mnd
     - goprintffuncname
     - gosec
     - gosimple
