@@ -137,7 +137,7 @@ func Test_parseArguments(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFile, gotXpath, err := parseArguments(tt.args.file, tt.args.f, tt.args.xpath, tt.args.x)
+			gotFile, gotXpath, err := parseArguments(tt.file, tt.f, tt.xpath, tt.x)
 			if gotFile != tt.wantFile {
 				t.Errorf("parseArguments() gotFile = %v, want %v", gotFile, tt.wantFile)
 			}
