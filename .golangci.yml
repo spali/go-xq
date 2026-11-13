@@ -1,55 +1,33 @@
-linters-settings:
-  lll:
-    line-length: 140
-  depguard:
-    rules:
-      main:
-        files:
-          - "$all"
-          - "!$test"
-        allow:
-          - "$gostd"
-          - github.com/
-      tests:
-        files:
-          - "$test"
-        allow:
-          - "$gostd"
-          - github.com/
+version: "2"
 
 linters:
-  disable-all: true
+  default: none
   enable:
     - bodyclose
+    - copyloopvar
     - depguard
     - dogsled
     - dupl
     - errcheck
     - exhaustive
-    - copyloopvar
     - funlen
     - gochecknoinits
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
-    - mnd
     - goprintffuncname
     - gosec
-    - gosimple
     - govet
     - ineffassign
     - lll
     - misspell
+    - mnd
     - nakedret
     - noctx
     - nolintlint
     - revive
     - rowserrcheck
     - staticcheck
-    - stylecheck
-    - typecheck
     - unconvert
     - unparam
     - unused
@@ -61,15 +39,45 @@ linters:
   # - gocognit
   # - godot
   # - godox
-  # - goerr113
-  # - maligned
+  # - err113
   # - nestif
   # - prealloc
   # - testpackage
   # - wsl
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - funlen
-        - scopelint
+
+  settings:
+    lll:
+      line-length: 140
+    depguard:
+      rules:
+        main:
+          files:
+            - "$all"
+            - "!$test"
+          allow:
+            - "$gostd"
+            - github.com/
+        tests:
+          files:
+            - "$test"
+          allow:
+            - "$gostd"
+            - github.com/
+
+  exclusions:
+    generated: lax
+    # keep the v1 default exclusions
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - path: _test\.go
+        linters:
+          - funlen
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
