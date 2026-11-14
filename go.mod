@@ -6,11 +6,11 @@ toolchain go1.27.4
 
 require (
 	github.com/antchfx/xmlquery v1.5.2
+	github.com/antchfx/xpath v1.3.9
 	github.com/rhysd/go-fakeio v1.0.0
 )
 
 require (
-	github.com/antchfx/xpath v1.3.9 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/text v0.44.0 // indirect

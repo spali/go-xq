@@ -4,12 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/antchfx/xmlquery"
+	"github.com/antchfx/xpath"
 )
 
 // set during built time
@@ -80,7 +83,7 @@ func parseArguments(_file string, _f string, _xpath string, _x string) (file str
 	return
 }
 
-func query(reader io.Reader, xpath string) error {
+func query(reader io.Reader, expression string) error {
 	if readCloser, ok := reader.(io.ReadCloser); ok {
 		defer readCloser.Close()
 	}
@@ -88,12 +91,20 @@ func query(reader io.Reader, xpath string) error {
 	if err != nil {
 		return fmt.Errorf("%w: %s", ErrXMLParse, err)
 	}
-	list, err := xmlquery.QueryAll(doc, xpath)
+	expr, err := xpath.Compile(expression)
 	if err != nil {
 		return fmt.Errorf("%w: %s", ErrXMLQuery, err)
 	}
-	for _, node := range list {
-		printNode(node)
+	switch result := expr.Evaluate(xmlquery.CreateXPathNavigator(doc)).(type) {
+	case *xpath.NodeIterator:
+		// let xmlquery map the result to nodes (it builds the attribute nodes)
+		for _, node := range xmlquery.QuerySelectorAll(doc, expr) {
+			printNode(node)
+		}
+	case float64:
+		fmt.Fprintln(os.Stdout, formatNumber(result))
+	default: // string or bool
+		fmt.Fprintln(os.Stdout, result)
 	}
 	return nil
 }
@@ -107,6 +118,23 @@ func printNode(node *xmlquery.Node) {
 	// prevent output of pseudo tags if root element was selected
 	isRoot := node.Parent != nil
 	fmt.Fprintln(os.Stdout, node.OutputXML(isRoot))
+}
+
+// formatNumber converts a number to a string like the XPath 1.0 string()
+// function (REC 4.2): no exponent, "NaN", "Infinity", "-Infinity" and "0" for -0.
+func formatNumber(f float64) string {
+	switch {
+	case math.IsNaN(f):
+		return "NaN"
+	case math.IsInf(f, 1):
+		return "Infinity"
+	case math.IsInf(f, -1):
+		return "-Infinity"
+	case f == 0:
+		return "0"
+	default:
+		return strconv.FormatFloat(f, 'f', -1, 64)
+	}
 }
 
 func xq(file string, xpath string) error {
