@@ -49,6 +49,9 @@ Output rules:
 - Text, CDATA and attribute nodes are printed as their plain value (not XML-escaped).
 - Each match is printed on its own line, in the order returned by the query.
 - No match prints nothing and still exits with `0`.
+- Expressions returning a number, string or boolean print that value on one line.
+  Numbers are formatted like the XPath `string()` function: no exponent,
+  `NaN`, `Infinity` and `-Infinity` for special values.
 
 Exit codes: `0` on success (also when nothing matched), `1` on a missing argument,
 an unreadable input, invalid XML or an invalid XPath expression. Errors are written to stderr.
@@ -146,6 +149,25 @@ Given `catalog.xml`:
 | `//book[last()]/price/text()`          | `5.95`                                         |
 | `//book[1]/title/text()`               | `XML Developer's Guide`                        |
 
+### Numbers, strings and booleans
+
+Functions and comparisons print their value, using `catalog.xml` from above:
+
+| Query                         | Output               |
+| ----------------------------- | -------------------- |
+| `count(//book)`               | `2`                  |
+| `sum(//price)`                | `50.900000000000006` |
+| `round(sum(//price))`         | `51`                 |
+| `string(//book[2]/@id)`       | `bk102`              |
+| `concat(//book[1]/@id, "-x")` | `bk101-x`            |
+| `//price > 40`                | `true`               |
+| `boolean(//book[@lang="fr"])` | `false`              |
+
+Numbers keep all digits needed to represent the floating point result exactly,
+like XPath's `string()` does, so `sum(//price)` above is not `50.9`. Use
+`round()`, `floor()` or `ceiling()` for whole numbers, or
+`round(sum(//price) * 100) div 100` for two decimals.
+
 ### Text with special characters
 
 Text and attribute values are printed as plain text, elements stay valid XML:
@@ -165,12 +187,19 @@ echo '<a note="Tom &amp; Jerry"><b>Rain &lt;2&gt; &amp; Sun</b></a>' > special.x
 ```sh
 version=$(xq -f pom.xml -x '/*[local-name()="project"]/*[local-name()="version"]/text()')
 echo "building version $version"
+
+if [ "$(xq -f report.xml -x 'count(//error)')" -gt 0 ]; then
+  echo "report contains errors" >&2
+  exit 1
+fi
+
+if [ "$(xq -f config.xml -x 'boolean(//feature[@name="beta"])')" = true ]; then
+  echo "beta enabled"
+fi
 ```
 
 ## Limitations
 
-- The expression must select nodes. Expressions returning a number, string or
-  boolean, like `count(//book)`, print nothing.
 - Namespace prefixes in the query match the prefixes used in the document
   (`//a:x` finds `<a:x>`). For a default namespace (`xmlns="…"`), plain names
   like `//x` work, or use `local-name()` to be independent of prefixes.
