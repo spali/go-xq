@@ -46,7 +46,7 @@ xq [-f <file|url|->] -x <xpath>
 Output rules:
 
 - Element nodes are printed as XML, including their children.
-- `text()` nodes are printed as (XML-escaped) text, attribute nodes as their plain value.
+- Text, CDATA and attribute nodes are printed as their plain value (not XML-escaped).
 - Each match is printed on its own line, in the order returned by the query.
 - No match prints nothing and still exits with `0`.
 
@@ -144,6 +144,21 @@ Given `catalog.xml`:
 | `//book[price > 10]/title`             | `<title>XML Developer&#39;s Guide</title>`     |
 | `//book[contains(title, "Rain")]/@id`  | `bk102`                                        |
 | `//book[last()]/price/text()`          | `5.95`                                         |
+| `//book[1]/title/text()`               | `XML Developer's Guide`                        |
+
+### Text with special characters
+
+Text and attribute values are printed as plain text, elements stay valid XML:
+
+```sh
+echo '<a note="Tom &amp; Jerry"><b>Rain &lt;2&gt; &amp; Sun</b></a>' > special.xml
+```
+
+| Query          | Output                            |
+| -------------- | --------------------------------- |
+| `/a/b/text()`  | `Rain <2> & Sun`                  |
+| `/a/@note`     | `Tom & Jerry`                     |
+| `/a/b`         | `<b>Rain &lt;2&gt; &amp; Sun</b>` |
 
 ### Use it in a script
 
@@ -159,5 +174,5 @@ echo "building version $version"
 - Namespace prefixes in the query match the prefixes used in the document
   (`//a:x` finds `<a:x>`). For a default namespace (`xmlns="…"`), plain names
   like `//x` work, or use `local-name()` to be independent of prefixes.
-- Special characters in element and `text()` output are XML-escaped
-  (`'` becomes `&#39;`). Attribute values are printed unescaped.
+- Special characters in element output are XML-escaped (`'` becomes `&#39;`),
+  so the output stays valid XML. Select `text()` to get the plain text.

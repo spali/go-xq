@@ -151,6 +151,11 @@ func Test_parseArguments(t *testing.T) {
 	}
 }
 
+const catalog = `<catalog>
+  <book id="bk101"><title>XML Developer's Guide</title><price>44.95</price></book>
+  <book id="bk102" note="Tom &amp; Jerry"><title>Rain &lt;2&gt; &amp; Sun</title><price>5.95</price></book>
+</catalog>`
+
 func Test_query(t *testing.T) {
 	type args struct {
 		reader io.Reader
@@ -170,6 +175,11 @@ func Test_query(t *testing.T) {
 		{"test root element specifically queried", args{strings.NewReader("<abc></abc>"), "/"}, "<?xml version=\"1.0\"?><abc></abc>\n", nil},
 		{"test root element queried", args{strings.NewReader("<abc></abc>"), "/*"}, "<abc></abc>\n", nil},
 		{"test attribute node", args{strings.NewReader("<abc id=\"test\"></abc>"), "/abc/@id"}, "test\n", nil},
+		// text nodes are printed unescaped like attributes
+		{"text node with apostrophe", args{strings.NewReader(catalog), "//book[1]/title/text()"}, "XML Developer's Guide\n", nil},
+		{"text node with entities", args{strings.NewReader(catalog), "//book[2]/title/text()"}, "Rain <2> & Sun\n", nil},
+		{"cdata node", args{strings.NewReader("<a><![CDATA[x < y & z]]></a>"), "/a/text()"}, "x < y & z\n", nil},
+		{"attribute with entities", args{strings.NewReader(catalog), "//book[2]/@note"}, "Tom & Jerry\n", nil},
 	}
 
 	for _, tt := range tests {

@@ -92,17 +92,21 @@ func query(reader io.Reader, xpath string) error {
 	if err != nil {
 		return fmt.Errorf("%w: %s", ErrXMLQuery, err)
 	}
-	for _, elem := range list {
-		if elem.Type == xmlquery.AttributeNode {
-			// do not nest attribute node in a tag
-			fmt.Fprintf(os.Stdout, "%s\n", elem.InnerText())
-		} else {
-			// prevent output of pseudo tags if root element was selected
-			isRoot := elem.Parent != nil
-			fmt.Fprintf(os.Stdout, "%s\n", elem.OutputXML(isRoot))
-		}
+	for _, node := range list {
+		printNode(node)
 	}
 	return nil
+}
+
+func printNode(node *xmlquery.Node) {
+	if node.Type == xmlquery.AttributeNode || node.Type == xmlquery.TextNode || node.Type == xmlquery.CharDataNode {
+		// print the value itself, not nested in a tag and not XML-escaped
+		fmt.Fprintln(os.Stdout, node.InnerText())
+		return
+	}
+	// prevent output of pseudo tags if root element was selected
+	isRoot := node.Parent != nil
+	fmt.Fprintln(os.Stdout, node.OutputXML(isRoot))
 }
 
 func xq(file string, xpath string) error {
